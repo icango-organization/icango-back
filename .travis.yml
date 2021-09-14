@@ -12,7 +12,8 @@ script:
   - docker run -e CI=true djangoproject python manage.py runserver 0:8000 --coverage
 
 after success:
-  - echo "Test Success, Test Success"
+  - echo "Test Success"
+  - echo "Test Success"
 #   - docker build -t djangoproject ./Dockerfile
 #   - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_ID" --password-stdin
 #   - docker push djangoproject
