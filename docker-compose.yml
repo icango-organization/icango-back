@@ -19,7 +19,7 @@ services:
   djangoproject:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile-dev
     environment:
       - DJANGO_DEBUG=True
       - DJANGO_DB_HOST=mariadbproject
@@ -30,11 +30,7 @@ services:
       - DJANGO_SECRET_KEY=dev_secret_key
     ports:
       - "8000:8000"
-    command:
-      - "python"
-      - "manage.py"
-      - "runserver"
-      - "0:8000"
+    command: /bin/bash -c "python manage.py migrate && python manage.py runserver 0:8000"
     volumes:
       - ./:/code
     depends_on:

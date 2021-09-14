@@ -1,0 +1,17 @@
+sudo: required
+
+language: python
+
+services:
+  - docker
+
+before_install:
+  - docker build -t djangoproject ./Dockerfile
+
+script:
+  - docker run djangoproject
+
+after success:
+  - docker build -t djangoproject ./Dockerfile
+  - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_ID" --password-stdin
+  - docker push djangoproject
