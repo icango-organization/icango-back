@@ -6,12 +6,23 @@ services:
   - docker
 
 before_install:
-  - docker build -t djangoproject ./Dockerfile
+  - docker build -t djangoproject -f ./Dockerfile
 
 script:
-  - docker run djangoproject
+  - docker run -e CI=true djangoproject python manage.py runserver 0:8000 --coverage
 
 after success:
-  - docker build -t djangoproject ./Dockerfile
-  - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_ID" --password-stdin
-  - docker push djangoproject
+  - echo "Test Success"
+#   - docker build -t djangoproject ./Dockerfile
+#   - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_ID" --password-stdin
+#   - docker push djangoproject
+
+# deploy:
+#   provider: elasticbeanstalk
+#   region: "ap-northeast-2"
+#   app: "icango-backend"
+#   env: "icangobackend-env"
+#   bucket_name: "elasticbeanstalk-ap-northeast-2-577059516042"
+#   bucket_path: "icango-backend"
+#   on:
+#     branch: master
