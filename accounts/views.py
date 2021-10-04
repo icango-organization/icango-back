@@ -5,6 +5,9 @@ from rest_framework.response    import Response
 from rest_framework.viewsets    import ModelViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
+# Test
+user = Account.objects.get(username="jyeon")
+
 class FeedbackViewSet(ModelViewSet):
     serializer_class = FeedbackSerializer
     permission_classes = [AllowAny]
@@ -40,13 +43,14 @@ class FeedbackViewSet(ModelViewSet):
 
     def update(self, request, pk):
         # Feedback Update
-        feedback   = Feedback.objects.get(id=pk)
+        feedback   = Feedback.objects.filter(id=pk).first()
         serializer = self.get_serializer(feedback, data=request.data)
 
-        if not serializer.is_valid(raise_exception=True):
-            return Response({'message': 'Feedback Update Failed'})
+        if feedback == None:
+            return Response({'message' : 'Feedback Does Not Exists'}, status=400)
 
-        feedback = serializer.save()     
+        if serializer.is_valid(raise_exception=True):
+            feedback = serializer.save()     
 
         # FeedbackImage Create
         images_created = request.data.get("feedbackimage_created")
@@ -61,7 +65,7 @@ class FeedbackViewSet(ModelViewSet):
         images_deleted = request.data.get('feedbackimage_deleted')
 
         if images_deleted != None:
-            images_deleted = [image['id'] for image in images_deleted]
+            images_deleted = [image.get('id') for image in images_deleted]
             FeedbackImage.objects.filter(pk__in=images_deleted).delete()
 
         # Deserialize
@@ -70,7 +74,11 @@ class FeedbackViewSet(ModelViewSet):
         return Response(feedback_data, status=200)
 
     def destroy(self, request, pk):
-        feedback = Feedback.objects.get(id=pk)
+        feedback = Feedback.objects.filter(id=pk).first()
+
+        if feedback == None:
+            return Response({'message' : 'Feedback Does Not Exists'}, status=400)
+
         feedback.delete()
 
         return Response({'message' : 'Feedback Deleted'}, status=200)
