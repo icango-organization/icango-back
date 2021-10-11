@@ -12,7 +12,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 import pymysql
 
 from pathlib    import Path
-from mysettings import DATABASES, SECRET_KEY
+from mysettings import \
+    DATABASES, SECRET_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME
 
 pymysql.install_as_MySQLdb()
 
@@ -175,3 +176,11 @@ REST_FRAMEWORK = {
     #     # 'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     # ),
 }
+
+# AWS S3
+AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
+
+AWS_REGION = AWS_REGION
+AWS_STORAGE_BUCKET_NAME = AWS_STORAGE_BUCKET_NAME
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME, AWS_REGION)
