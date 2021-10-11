@@ -1,5 +1,4 @@
-import boto3, uuid, botocore
-from rest_framework.serializers import Serializer
+import boto3, uuid
 
 from .models         import Account, Feedback, FeedbackImage
 from .serializers    import FeedbackImageSerializer, FeedbackSerializer

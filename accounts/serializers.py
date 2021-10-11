@@ -1,6 +1,4 @@
-import boto3, uuid
-
-from .models import Feedback, FeedbackImage
+from .models         import Feedback, FeedbackImage
 from icango.settings import \
     AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_S3_CUSTOM_DOMAIN
 
