@@ -1,12 +1,24 @@
-from .models      import Account, Feedback, FeedbackImage
-from .serializers import FeedbackImageSerializer, FeedbackSerializer
+import boto3, uuid, botocore
+from rest_framework.serializers import Serializer
+
+from .models         import Account, Feedback, FeedbackImage
+from .serializers    import FeedbackImageSerializer, FeedbackSerializer
 
 from rest_framework.response    import Response
 from rest_framework.viewsets    import ModelViewSet
+from rest_framework.decorators  import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-# Test
-user = Account.objects.get(username="jyeon")
+from icango.settings import \
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_S3_CUSTOM_DOMAIN
+
+# # Test
+# user = Account.objects.get(username="test")
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def test(request):
+    return Response({})
 
 class FeedbackViewSet(ModelViewSet):
     serializer_class = FeedbackSerializer
@@ -26,15 +38,34 @@ class FeedbackViewSet(ModelViewSet):
         
         if serializer.is_valid(raise_exception=True):
             feedback = serializer.save(user=user)
-
+        
         # FeedbackImage Create
-        images_created = request.data.get("feedbackimage_created")
+        s3_client = boto3.client(
+            's3',
+            region_name = AWS_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+        feedbackimage_created = request.FILES.getlist('feedbackimage_created')
+        images_for_serializer = []
 
-        if images_created != None:
-            serializer_images = FeedbackImageSerializer(data=images_created, many=True)
+        if len(feedbackimage_created) != 0:
+            for image in feedbackimage_created:
+                img_uuid = str(uuid.uuid4())
+                s3_client.upload_fileobj(
+                    image,
+                    AWS_STORAGE_BUCKET_NAME,
+                    img_uuid,
+                    ExtraArgs = {
+                        'ContentType' : image.content_type
+                    }
+                )
+                images_for_serializer.append({'img_path' :  AWS_S3_CUSTOM_DOMAIN + "/" + img_uuid})
+            
+            serializer_feedbackimage = FeedbackImageSerializer(data=images_for_serializer, many=True)
 
-            if serializer_images.is_valid(raise_exception=True):
-                serializer_images.save(feedback=feedback)
+            if serializer_feedbackimage.is_valid(raise_exception=True):
+                serializer_feedbackimage.save(feedback=feedback)
         
         # Deserialize
         feedback_data = FeedbackSerializer(feedback, many=False).data
@@ -53,20 +84,39 @@ class FeedbackViewSet(ModelViewSet):
             feedback = serializer.save()     
 
         # FeedbackImage Create
-        images_created = request.data.get("feedbackimage_created")
+        s3_client = boto3.client(
+            's3',
+            region_name = AWS_REGION,
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+        feedbackimage_created = request.FILES.getlist('feedbackimage_created')
+        serializer_for_images = []
 
-        if images_created != None:
-            serializer_images = FeedbackImageSerializer(data=images_created, many=True)
+        if len(feedbackimage_created) != 0:
+            for image in feedbackimage_created:
+                img_uuid = str(uuid.uuid4())
+                s3_client.upload_fileobj(
+                    image,
+                    AWS_STORAGE_BUCKET_NAME,
+                    img_uuid,
+                    ExtraArgs = {
+                        'ContentType' : image.content_type
+                    }
+                )
+                serializer_for_images.append({'img_path' :  AWS_S3_CUSTOM_DOMAIN + "/" + img_uuid})
+            
+            serializer_feedbackimage = FeedbackImageSerializer(data=serializer_for_images, many=True)
 
-            if serializer_images.is_valid(raise_exception=True):
-                serializer_images.save(feedback=feedback)
+            if serializer_feedbackimage.is_valid(raise_exception=True):
+                serializer_feedbackimage.save(feedback=feedback)
 
         # FeedbackImage Delete
-        images_deleted = request.data.get('feedbackimage_deleted')
+        feedbackimage_deleted = request.data.get('feedbackimage_deleted')
 
-        if images_deleted != None:
-            images_deleted = [image.get('id') for image in images_deleted]
-            FeedbackImage.objects.filter(pk__in=images_deleted).delete()
+        if feedbackimage_deleted != None:
+            feedbackimage_deleted = [image.get('id') for image in feedbackimage_deleted]
+            FeedbackImage.objects.filter(pk__in=feedbackimage_deleted).delete()
 
         # Deserialize
         feedback_data = FeedbackSerializer(feedback, many=False).data
