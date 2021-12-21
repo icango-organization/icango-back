@@ -224,3 +224,6 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type'
 }
+
+# Open API
+API_serviceKey = get_secret("API_SERVICEKEY")
