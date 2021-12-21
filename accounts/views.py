@@ -1,133 +1,145 @@
-import boto3, uuid
 
-from .models         import Account, Feedback, FeedbackImage
-from .serializers    import FeedbackImageSerializer, FeedbackSerializer
+from .models      import Feedback, Account
+from .serializers import AccountSerializer, FeedbackSerializer
+from .utils       import BaseS3
 
-from rest_framework.response    import Response
-from rest_framework.viewsets    import ModelViewSet
-from rest_framework.decorators  import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response              import Response
+from rest_framework.viewsets              import ModelViewSet
+from rest_framework.decorators            import api_view, permission_classes
+from rest_framework.permissions           import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework_simplejwt.views       import TokenObtainPairView
+from rest_framework_simplejwt.exceptions  import InvalidToken, TokenError
 
-from icango.settings import \
-    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_S3_CUSTOM_DOMAIN
+class SignUpView(TokenObtainPairView):
+    permission_classes = (AllowAny,)
 
-# # Test
-# user = Account.objects.get(username="test")
+    def post(self, request, *args, **kwargs):
+        user = Account.objects.filter(username=request.data.get('username')).first()
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def test(request):
-    return Response({})
+        if user:
+            return Response(
+                {
+                    "username": [
+                        "account with this username already exists."
+                    ]
+                },
+                status = 400
+            )
+
+        serializer_user= AccountSerializer(data=request.data)
+
+        if serializer_user.is_valid(raise_exception=True):
+            serializer_user.save()
+
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+        return Response(serializer.validated_data, status=201)
 
 class FeedbackViewSet(ModelViewSet):
-    serializer_class = FeedbackSerializer
-    permission_classes = [AllowAny]
-    lookup_field = 'pk'
+    serializer_class   = FeedbackSerializer
+    permission_classes = (IsAuthenticated,)
+    lookup_field       = 'pk'
+    s3                 = BaseS3(field="image_path")
 
     def get_queryset(self):
-        queryset = \
-            Feedback.objects.filter(account=user)\
+        queryset = (
+            Feedback.objects
+            .filter(account=self.request.user)
             .prefetch_related('feedbackimage_set')
+        )
 
         return queryset
-
+    
     def create(self, request):
-        # Feedback Create
+        request_images_create = request.FILES.getlist("feedbackimage_set_create")
+
+        # DB Create: Feedback, FeedbackImage
         serializer = self.get_serializer(data=request.data)
-        
+
         if serializer.is_valid(raise_exception=True):
-            feedback = serializer.save(user=user)
-        
-        # FeedbackImage Create
-        s3_client = boto3.client(
-            's3',
-            region_name = AWS_REGION,
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+            [feedback, images] = serializer.save(
+                user                  = request.user,
+                request_images_create = request_images_create
+            )
+
+        # S3 Create: FeedbackImage
+        self.s3.api_post(
+            files    = request_images_create,
+            data_set = images
         )
-        feedbackimage_created = request.FILES.getlist('feedbackimage_created')
-        images_for_serializer = []
 
-        if len(feedbackimage_created) != 0:
-            for image in feedbackimage_created:
-                img_uuid = str(uuid.uuid4())
-                s3_client.upload_fileobj(
-                    image,
-                    AWS_STORAGE_BUCKET_NAME,
-                    img_uuid,
-                    ExtraArgs = {
-                        'ContentType' : image.content_type
-                    }
-                )
-                images_for_serializer.append({'img_path' :  AWS_S3_CUSTOM_DOMAIN + "/" + img_uuid})
-            
-            serializer_feedbackimage = FeedbackImageSerializer(data=images_for_serializer, many=True)
-
-            if serializer_feedbackimage.is_valid(raise_exception=True):
-                serializer_feedbackimage.save(feedback=feedback)
-        
         # Deserialize
-        feedback_data = FeedbackSerializer(feedback, many=False).data
+        feedback_data = self.get_serializer(feedback, many=False).data
 
         return Response(feedback_data, status=201)
 
     def update(self, request, pk):
-        # Feedback Update
+        request_images_create = request.FILES.getlist("feedbackimage_set_create")
+        request_images_delete = request.data.get("feedbackimage_set_delete")
+
+        # DB Update: Feedback, FeedbackImage
         feedback   = Feedback.objects.filter(id=pk).first()
         serializer = self.get_serializer(feedback, data=request.data)
 
-        if feedback == None:
-            return Response({'message' : 'Feedback Does Not Exists'}, status=400)
+        if not feedback:
+            return Response({'detail' : 'Not found'}, status=404)
 
         if serializer.is_valid(raise_exception=True):
-            feedback = serializer.save()     
+            [feedback, images] = serializer.save(
+                request_images_create = request_images_create,
+                request_images_delete = request_images_delete,            
+            )
 
-        # FeedbackImage Create
-        s3_client = boto3.client(
-            's3',
-            region_name = AWS_REGION,
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        # S3 Create: FeedbackImage
+        self.s3.api_post(
+            files    = request_images_create,
+            data_set = images
         )
-        feedbackimage_created = request.FILES.getlist('feedbackimage_created')
-        serializer_for_images = []
 
-        if len(feedbackimage_created) != 0:
-            for image in feedbackimage_created:
-                img_uuid = str(uuid.uuid4())
-                s3_client.upload_fileobj(
-                    image,
-                    AWS_STORAGE_BUCKET_NAME,
-                    img_uuid,
-                    ExtraArgs = {
-                        'ContentType' : image.content_type
-                    }
-                )
-                serializer_for_images.append({'img_path' :  AWS_S3_CUSTOM_DOMAIN + "/" + img_uuid})
-            
-            serializer_feedbackimage = FeedbackImageSerializer(data=serializer_for_images, many=True)
-
-            if serializer_feedbackimage.is_valid(raise_exception=True):
-                serializer_feedbackimage.save(feedback=feedback)
-
-        # FeedbackImage Delete
-        feedbackimage_deleted = request.data.get('feedbackimage_deleted')
-
-        if feedbackimage_deleted != None:
-            feedbackimage_deleted = [image.get('id') for image in feedbackimage_deleted]
-            FeedbackImage.objects.filter(pk__in=feedbackimage_deleted).delete()
+        # S3 Delete: FeedbackImage
+        self.s3.api_delete(data_urls=request_images_delete)
 
         # Deserialize
-        feedback_data = FeedbackSerializer(feedback, many=False).data
+        feedback_data = self.get_serializer(feedback, many=False).data
 
         return Response(feedback_data, status=200)
 
     def destroy(self, request, pk):
+        # DB Delete: Feedback
         feedback = Feedback.objects.filter(id=pk).first()
 
-        if feedback == None:
-            return Response({'message' : 'Feedback Does Not Exists'}, status=400)
-
+        if not feedback:
+            return Response({'detail' : 'Not found'}, status=404)
+        
+        # S3 Delete: FeedbackImage
+        self.s3.api_delete(data_folder="feedback", data_folder_id=feedback.id)
+        
+        # DB Delete: Feedback
         feedback.delete()
 
-        return Response({'message' : 'Feedback Deleted'}, status=200)
+        return Response({'detail' : 'Deleted'}, status=200)
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def test(request):
+    return Response({})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def permission_classes_allowany(request):
+    return Response({}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def permission_classes_isauthenicated(request):
+    return Response({}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def permission_classes_isadminuser(request):
+    return Response({}, status=200)
