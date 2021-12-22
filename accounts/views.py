@@ -1,9 +1,3 @@
-
-from unittest.mock import Base
-from .models      import Feedback, Account
-from .serializers import AccountSerializer, FeedbackSerializer
-from .utils       import BaseS3
-
 from rest_framework.response              import Response
 from rest_framework.viewsets              import ModelViewSet
 from rest_framework.decorators            import api_view, permission_classes
@@ -11,13 +5,14 @@ from rest_framework.permissions           import AllowAny, IsAdminUser, IsAuthen
 from rest_framework_simplejwt.views       import TokenObtainPairView
 from rest_framework_simplejwt.exceptions  import InvalidToken, TokenError
 
+from .models      import Feedback, Account
+from .serializers import AccountSerializer, FeedbackSerializer
+from .utils       import BaseS3
+
 # test
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def test(request):
-    s3 = BaseS3()
-    print("s3", s3.api_post)
-    print("s3-type", type(s3.api_post))
     return Response({})
 
 @api_view(['GET'])

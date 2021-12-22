@@ -1,10 +1,11 @@
 import uuid, datetime
 
-from .models         import Account, Feedback, FeedbackImage
-from icango.settings import \
-    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_S3_CUSTOM_DOMAIN
-
 from rest_framework import serializers
+
+from .models         import Account, Feedback, FeedbackImage
+from icango.settings import (
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_S3_CUSTOM_DOMAIN
+)
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:

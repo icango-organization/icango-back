@@ -1,8 +1,7 @@
-from django.conf                   import settings
 from django.db                     import models
 from django.db.models.deletion     import CASCADE
-from django.contrib.auth.models    import AbstractUser
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.conf                   import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, password=None):

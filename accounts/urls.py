@@ -1,11 +1,12 @@
 from django.urls.conf import path
+
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
 from .views import (
     FeedbackViewSet, SignUpView,
     test, permission_classes_allowany, permission_classes_isauthenicated, permission_classes_isadminuser
 )
-
-from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r"/feedback", FeedbackViewSet, basename="feedback")
