@@ -1,4 +1,5 @@
 
+from unittest.mock import Base
 from .models      import Feedback, Account
 from .serializers import AccountSerializer, FeedbackSerializer
 from .utils       import BaseS3
@@ -10,6 +11,31 @@ from rest_framework.permissions           import AllowAny, IsAdminUser, IsAuthen
 from rest_framework_simplejwt.views       import TokenObtainPairView
 from rest_framework_simplejwt.exceptions  import InvalidToken, TokenError
 
+# test
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def test(request):
+    s3 = BaseS3()
+    print("s3", s3.api_post)
+    print("s3-type", type(s3.api_post))
+    return Response({})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def permission_classes_allowany(request):
+    return Response({}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def permission_classes_isauthenicated(request):
+    return Response({}, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def permission_classes_isadminuser(request):
+    return Response({}, status=200)
+
+# feature
 class SignUpView(TokenObtainPairView):
     permission_classes = (AllowAny,)
 
@@ -123,23 +149,3 @@ class FeedbackViewSet(ModelViewSet):
         feedback.delete()
 
         return Response({'detail' : 'Deleted'}, status=200)
-
-@api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
-def test(request):
-    return Response({})
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def permission_classes_allowany(request):
-    return Response({}, status=200)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def permission_classes_isauthenicated(request):
-    return Response({}, status=200)
-
-@api_view(['GET'])
-@permission_classes([IsAdminUser])
-def permission_classes_isadminuser(request):
-    return Response({}, status=200)

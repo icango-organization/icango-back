@@ -418,7 +418,7 @@ class SignUpSignInTest(TestCase):
 
         self.assertEqual(
             response.status_code, 403
-        )    
+        )
 
 class FeedbackTest(TestCase):
     @classmethod
@@ -627,12 +627,12 @@ class FeedbackTest(TestCase):
             response.status_code, 404
         )
 
-    @patch("accounts.views.BaseS3")
-    def test_feedback_post_201(self, mocked_requests):
-        client  = APIClient()
-        user    = Account.objects.filter(username="user").first()
-        image_1 = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
-        image_2 = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
+    @patch("accounts.utils.BaseS3.api_post", return_value=None)
+    def test_feedback_post_201(self, mocked_api_post):
+        client   = APIClient()
+        user     = Account.objects.filter(username="user").first()
+        image_1  = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
+        image_2  = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
 
         client.force_authenticate(user=user)
         response = client.post(
@@ -683,8 +683,8 @@ class FeedbackTest(TestCase):
             response.status_code, 201
         )
 
-    @patch("accounts.views.BaseS3")
-    def test_feedback_post_database_constraint_error_400(self, mocked_requests):
+    @patch("accounts.views.BaseS3.api_post", return_value=None)
+    def test_feedback_post_database_constraint_error_400(self, mocked_api_post):
         client = APIClient()
         user   = Account.objects.filter(username="user").first()
 
@@ -719,12 +719,13 @@ class FeedbackTest(TestCase):
             response.status_code, 400
         )
 
-    @patch("accounts.views.BaseS3")
-    def test_feedback_put_200_create_feedbackimage(self, mocked_requests):
-        client  = APIClient()
-        user    = Account.objects.filter(username="user").first()
-        image_1 = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
-        image_2 = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
+    @patch("accounts.views.BaseS3.api_post", return_value=None)
+    @patch("accounts.views.BaseS3.api_delete", return_value=None)
+    def test_feedback_put_200_create_feedbackimage(self, mocked_api_post, mocked_api_delete):
+        client   = APIClient()
+        user     = Account.objects.filter(username="user").first()
+        image_1  = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
+        image_2  = TemporaryUploadedFile("image.png", content_type="image/png", size=10, charset="utf8mb4")
 
         client.force_authenticate(user=user)
         response = client.put(
@@ -784,11 +785,12 @@ class FeedbackTest(TestCase):
             response.status_code, 200
         )
     
-    @patch("accounts.views.BaseS3")
-    def test_feedback_put_200_delete_feedbackimage(self, mocked_requests):
+    @patch("accounts.views.BaseS3.api_post", return_value=None)
+    @patch("accounts.views.BaseS3.api_delete", return_value=None)
+    def test_feedback_put_200_delete_feedbackimage(self, mocked_api_post, mocked_api_delete):
         client = APIClient()
         user   = Account.objects.filter(username="user").first()
-
+        
         client.force_authenticate(user=user)
         response = client.put(
             "/accounts/feedback/2",
@@ -836,8 +838,9 @@ class FeedbackTest(TestCase):
             response.status_code, 200
         )
 
-    @patch("accounts.views.BaseS3")
-    def test_feedback_put_not_found_404(self, mocked_requests):
+    @patch("accounts.views.BaseS3.api_post", return_value=None)
+    @patch("accounts.views.BaseS3.api_delete", return_value=None)
+    def test_feedback_put_not_found_404(self, mocked_api_post, mocked_api_delete):
         client = APIClient()
         user   = Account.objects.filter(username="user").first()
 
@@ -865,8 +868,8 @@ class FeedbackTest(TestCase):
             response.status_code, 404
         )
 
-    @patch("accounts.views.BaseS3")
-    def test_feedback_delete_200(self, mocked_requests):
+    @patch("accounts.utils.BaseS3.api_delete", return_value=None)
+    def test_feedback_delete_200(self, mocked_api_delete):
         client = APIClient()
         user   = Account.objects.filter(username="user").first()
 
@@ -886,8 +889,8 @@ class FeedbackTest(TestCase):
             response.status_code, 200
         )
 
-    @patch("accounts.views.BaseS3")
-    def test_feedback_delete_404_not_found(self, mocked_requests):
+    @patch("accounts.utils.BaseS3.api_delete", return_value=None)
+    def test_feedback_delete_404_not_found(self, mocked_api_delete):
         client = APIClient()
         user   = Account.objects.filter(username="user").first()
 
