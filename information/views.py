@@ -1,15 +1,13 @@
 import requests
-from requests import status_codes
-from rest_framework.decorators import action
-
-from .models      import Station
-from .serializers import StationSerializer
-from icango.settings import API_serviceKey
 
 from rest_framework.response    import Response
-from rest_framework.views       import APIView
+from rest_framework.decorators  import action
 from rest_framework.viewsets    import ModelViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from .models        import Station
+from .serializers   import StationSerializer
+from icango.settings import API_serviceKey
 
 class StationViewSet(ModelViewSet):
     serializer_class = StationSerializer
@@ -50,30 +48,6 @@ class RouteViewSet(ModelViewSet):
     @action(detail=False, methods=['get'])
     def transfer(self, request):
         data     = request.data
-
-        test = (
-            (
-                ("http://openapi.kric.go.kr/openapi/handicapped/transferMovement")
-                + ("?serviceKey={serviceKey}")
-                + ("&format=JSON")
-                + ("&stinCd={stinCd}")
-                + ("&lnCd={lnCd}")
-                + ("&railOprIsttCd={railOprIsttCd}")
-                + ("&chthTgtLn={chthTgtLn}")
-                + ("&chtnNextStinCd={chtnNextStinCd}")
-                + ("&prevStinCd={prevStinCd}")
-
-            ).format(
-                serviceKey=API_serviceKey,
-                stinCd=data.get('stinCd'),
-                lnCd=data.get('lnCd'),
-                railOprIsttCd=data.get('railOprIsttCd'),
-                chthTgtLn=data.get('chthTgtLn'),
-                chtnNextStinCd=data.get('chtnNextStinCd'),
-                prevStinCd=data.get('prevStinCd')  
-            )
-        )
-
         response = requests.get(
             (
                 ("http://openapi.kric.go.kr/openapi/handicapped/transferMovement")

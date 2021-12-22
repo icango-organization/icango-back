@@ -1,12 +1,11 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from django.test                    import TestCase, Client
+from django.test                    import TestCase
 from django.core.files.uploadedfile import TemporaryUploadedFile
 
-from rest_framework      import response
 from rest_framework.test import APIClient
 
-from accounts.models import Account, Feedback, FeedbackImage
+from .models import Account, Feedback, FeedbackImage
 
 class SignUpSignInTest(TestCase):
     @classmethod
