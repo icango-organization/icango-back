@@ -1,3 +1,4 @@
+.DS_Store
 sercrets.json
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,django,visualstudiocode
