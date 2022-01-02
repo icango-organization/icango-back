@@ -25,7 +25,7 @@ class StationTest(TestCase):
                         STIN_NM          = row[5]
                     )
 
-    def test_station_get_queryset_search_station(self):
+    def test_station_get_queryset_200(self):
         client = APIClient()
 
         response = client.get(
