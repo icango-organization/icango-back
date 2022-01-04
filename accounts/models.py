@@ -1,3 +1,5 @@
+import uuid
+
 from django.db                     import models
 from django.db.models.deletion     import CASCADE
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
@@ -55,6 +57,7 @@ class LikeStation(models.Model):
 
 class Feedback(models.Model):
     account    = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=CASCADE, null=True)
+    uuid       = models.UUIDField(default=uuid.uuid4(), editable=False)
     tag        = models.CharField(max_length=20, blank=True)
     title      = models.CharField(max_length=20, blank=True)
     content    = models.CharField(max_length=100, blank=True)
