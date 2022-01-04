@@ -598,7 +598,7 @@ class FeedbackTest(TestCase):
             response.status_code, 200
         )
 
-    def test_feedback_get_object_not_found_404(self):
+    def test_feedback_get_object_404_not_found(self):
         client = APIClient()
 
         response_signin = client.post(
@@ -683,7 +683,7 @@ class FeedbackTest(TestCase):
         )
 
     @patch("accounts.views.BaseS3.api_post", return_value=None)
-    def test_feedback_post_database_constraint_error_400(self, mocked_api_post):
+    def test_feedback_post_400_database_constraint_error(self, mocked_api_post):
         client = APIClient()
         user   = Account.objects.filter(username="user").first()
 
@@ -839,7 +839,7 @@ class FeedbackTest(TestCase):
 
     @patch("accounts.views.BaseS3.api_post", return_value=None)
     @patch("accounts.views.BaseS3.api_delete", return_value=None)
-    def test_feedback_put_not_found_404(self, mocked_api_post, mocked_api_delete):
+    def test_feedback_put_404_not_found(self, mocked_api_post, mocked_api_delete):
         client = APIClient()
         user   = Account.objects.filter(username="user").first()
 

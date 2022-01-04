@@ -43,7 +43,11 @@ SECRET_KEY = get_secret("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '172.19.0.3'
+]
 
 
 # Application definition
@@ -58,6 +62,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'accounts',
     'information',
     'drf_spectacular',
@@ -106,7 +111,7 @@ DATABASES = {
         'PASSWORD': get_secret("DATABASES_PASSWORD"),
         'HOST': 'db',
         'PORT': '3306',
-        # 'ATOMIC_REQUESTS' : True
+        'ATOMIC_REQUESTS' : True
     }
 }
 
@@ -157,8 +162,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 APPEND_SLASH = False
 
 ##CORS
-CORS_ORIGIN_ALLOW_ALL=True
 CORS_ALLOW_CREDENTIALS=True
+CORS_ALLOWED_ORIGINS = [
+		# 프런트엔드 로컬 서버,
+		# 프론트엔드 배포 서버(AWS)
+]
 
 CORS_ALLOW_METHODS = (
     'DELETE',
@@ -195,9 +203,6 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    #     # 'rest_framework.authentication.SessionAuthentication',
-    #     # 'rest_framework.authentication.BasicAuthentication',
-    #     # 'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     )
 }
 
@@ -211,7 +216,7 @@ AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com/' % (AWS_STORAGE_BUCKET_NAME, AWS
 
 # Authentication
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1), 
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30), 
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,

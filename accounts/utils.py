@@ -1,4 +1,7 @@
 import boto3
+from botocore.exceptions import ClientError
+from rest_framework.response              import Response
+
 
 from icango.settings import (
     AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_S3_CUSTOM_DOMAIN
@@ -18,13 +21,20 @@ class BaseS3():
 
     @classmethod
     def post(cls, files=None, keys=None):
-        for file, key in zip(files, keys):
-            cls.bucket.upload_fileobj(
-                file, key,
-                ExtraArgs = {
-                    "ContentType" : file.content_type
-                }
-            )
+        try:
+            for file, key in zip(files, keys):
+                cls.bucket.upload_fileobj(
+                    file, key,
+                    ExtraArgs = {
+                        "ContentType" : file.content_type
+                    }
+                )
+            
+            return True
+
+        except ClientError:
+            return False
+
 
     def api_post(self, files=None, data_set=None):
         if type(data_set) == dict:
@@ -36,10 +46,16 @@ class BaseS3():
 
     @classmethod
     def delete(cls, prefixes=None):
-        for prefix in prefixes:
-            object = cls.bucket.objects.filter(Prefix=prefix)
-            object.delete()
-    
+        try:
+            for prefix in prefixes:
+                object = cls.bucket.objects.filter(Prefix=prefix)
+                object.delete()
+            
+            return True
+
+        except ClientError:
+            return False
+
     def api_delete(self, data_urls=None, data_folder=None, data_folder_id=None):
         prefixes = []
         
