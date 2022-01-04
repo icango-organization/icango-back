@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from rest_framework.response              import Response
 from rest_framework.viewsets              import ModelViewSet
 from rest_framework.decorators            import api_view, permission_classes
@@ -64,7 +66,7 @@ class SignUpView(TokenObtainPairView):
 class FeedbackViewSet(ModelViewSet):
     serializer_class   = FeedbackSerializer
     permission_classes = (IsAuthenticated,)
-    lookup_field       = 'pk'
+    lookup_field       = 'uuid'
     s3                 = BaseS3(field="image_path")
 
     def get_queryset(self):
@@ -76,6 +78,7 @@ class FeedbackViewSet(ModelViewSet):
 
         return queryset
     
+    @transaction.atomic
     def create(self, request):
         request_images_create = request.FILES.getlist("feedbackimage_set_create")
 
@@ -99,16 +102,23 @@ class FeedbackViewSet(ModelViewSet):
 
         return Response(feedback_data, status=201)
 
-    def update(self, request, pk):
+    def update(self, request, uuid):
         request_images_create = request.FILES.getlist("feedbackimage_set_create")
         request_images_delete = request.data.get("feedbackimage_set_delete")
 
         # DB Update: Feedback, FeedbackImage
-        feedback   = Feedback.objects.filter(id=pk).first()
+        feedback   = Feedback.objects.filter(uuid=uuid).first()
         serializer = self.get_serializer(feedback, data=request.data)
 
         if not feedback:
             return Response({'detail' : 'Not found'}, status=404)
+        
+        if feedback.account != request.user:
+            return Response(
+                {
+                    "detail": "You do not have permission to perform this action."
+                }
+            )
 
         if serializer.is_valid(raise_exception=True):
             [feedback, images] = serializer.save(
@@ -130,12 +140,19 @@ class FeedbackViewSet(ModelViewSet):
 
         return Response(feedback_data, status=200)
 
-    def destroy(self, request, pk):
+    def destroy(self, request, uuid):
         # DB Delete: Feedback
-        feedback = Feedback.objects.filter(id=pk).first()
+        feedback = Feedback.objects.filter(uuid=uuid).first()
 
         if not feedback:
             return Response({'detail' : 'Not found'}, status=404)
+
+        if feedback.account != request.user:
+            return Response(
+                {
+                    "detail": "You do not have permission to perform this action."
+                }
+            )
         
         # S3 Delete: FeedbackImage
         self.s3.api_delete(data_folder="feedback", data_folder_id=feedback.id)
@@ -143,4 +160,4 @@ class FeedbackViewSet(ModelViewSet):
         # DB Delete: Feedback
         feedback.delete()
 
-        return Response({'detail' : 'Deleted'}, status=200)
+        return Response({'detail' : 'Deleted'}, status=204)
