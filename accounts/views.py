@@ -70,6 +70,8 @@ class FeedbackViewSet(ModelViewSet):
     s3                 = BaseS3(field="image_path")
 
     def get_queryset(self):
+        print(1)
+        print(self.request.user)
         queryset = (
             Feedback.objects
             .filter(account=self.request.user)
@@ -78,7 +80,6 @@ class FeedbackViewSet(ModelViewSet):
 
         return queryset
     
-    @transaction.atomic
     def create(self, request):
         request_images_create = request.FILES.getlist("feedbackimage_set_create")
 
@@ -141,10 +142,11 @@ class FeedbackViewSet(ModelViewSet):
         return Response(feedback_data, status=200)
 
     def destroy(self, request, uuid):
+        print(1)
         # DB Delete: Feedback
         feedback = Feedback.objects.filter(uuid=uuid).first()
 
-        if not feedback:
+        if not feedback:            
             return Response({'detail' : 'Not found'}, status=404)
 
         if feedback.account != request.user:
@@ -155,7 +157,7 @@ class FeedbackViewSet(ModelViewSet):
             )
         
         # S3 Delete: FeedbackImage
-        self.s3.api_delete(data_folder="feedback", data_folder_id=feedback.id)
+        self.s3.api_delete(data_folder="feedback", data_folder_id=feedback.uuid)
         
         # DB Delete: Feedback
         feedback.delete()
