@@ -57,7 +57,7 @@ class LikeStation(models.Model):
 
 class Feedback(models.Model):
     account    = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=CASCADE, null=True)
-    uuid       = models.UUIDField(default=uuid.uuid4(), editable=False)
+    uuid       = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tag        = models.CharField(max_length=20, blank=True)
     title      = models.CharField(max_length=20, blank=True)
     content    = models.CharField(max_length=100, blank=True)
